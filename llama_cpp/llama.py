@@ -488,6 +488,7 @@ class Llama:
         temperature: float = 0.8,
         top_p: float = 0.95,
         logprobs: Optional[int] = None,
+        full_logprobs: bool = False,
         echo: bool = False,
         stop: Optional[List[str]] = [],
         repeat_penalty: float = 1.1,
@@ -635,7 +636,18 @@ class Llama:
             text_str = text_str + suffix
 
         logprobs_or_none: Optional[CompletionLogprobs] = None
-        if logprobs is not None:
+        if logprobs is not None and full_logprobs:
+            if logprobs == 0:
+                logits = self.eval_logits
+            elif logprobs == -1:
+                logits = list(self.eval_logits)[-len(completion_tokens):]
+            else:
+                logits = list(self.eval_logits)[-logprobs:]
+            logprobs_or_none = [
+                Llama.logits_to_logprobs(list(map(float, row)))
+                for row in logits
+            ]
+        elif logprobs is not None:
             text_offset = 0
             text_offsets: List[int] = []
             token_logprobs: List[float] = []
@@ -709,6 +721,7 @@ class Llama:
         temperature: float = 0.8,
         top_p: float = 0.95,
         logprobs: Optional[int] = None,
+        full_logprobs: bool = False,
         echo: bool = False,
         stop: Optional[List[str]] = [],
         repeat_penalty: float = 1.1,
@@ -724,6 +737,7 @@ class Llama:
             temperature: The temperature to use for sampling.
             top_p: The top-p value to use for sampling.
             logprobs: The number of logprobs to return. If None, no logprobs are returned.
+            full_logprobs: if `logprobs` is not None, returns full logprobs vector (instead of top). If `logprobs==-1` only generated tokens, `logprobs==0` all tokens, else last `logprobs` tokens.
             echo: Whether to echo the prompt.
             stop: A list of strings to stop generation when encountered.
             repeat_penalty: The penalty to apply to repeated tokens.
@@ -744,6 +758,7 @@ class Llama:
             temperature=temperature,
             top_p=top_p,
             logprobs=logprobs,
+            full_logprobs=full_logprobs,
             echo=echo,
             stop=stop,
             repeat_penalty=repeat_penalty,
@@ -764,6 +779,7 @@ class Llama:
         temperature: float = 0.8,
         top_p: float = 0.95,
         logprobs: Optional[int] = None,
+        full_logprobs: bool = False,
         echo: bool = False,
         stop: Optional[List[str]] = [],
         repeat_penalty: float = 1.1,
@@ -779,6 +795,7 @@ class Llama:
             temperature: The temperature to use for sampling.
             top_p: The top-p value to use for sampling.
             logprobs: The number of logprobs to return. If None, no logprobs are returned.
+            full_logprobs: if `logprobs` is not None, returns full logprobs vector (instead of top). If `logprobs==-1` only generated tokens, `logprobs==0` all tokens, else last `logprobs` tokens.
             echo: Whether to echo the prompt.
             stop: A list of strings to stop generation when encountered.
             repeat_penalty: The penalty to apply to repeated tokens.
@@ -799,6 +816,7 @@ class Llama:
             temperature=temperature,
             top_p=top_p,
             logprobs=logprobs,
+            full_logprobs=full_logprobs,
             echo=echo,
             stop=stop,
             repeat_penalty=repeat_penalty,
